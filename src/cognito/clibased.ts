@@ -9,6 +9,7 @@ const storage = require("node-persist");
 
 interface Tokens {
   idToken: string;
+  accessToken: string;
   refreshToken: string;
   idTokenTTI: number;
   username: string;
@@ -34,10 +35,12 @@ const HandleNewPasswordRequired = async (cognitoUser: CognitoUser, username: str
       onSuccess(result) {
         const idToken: string = result.getIdToken().getJwtToken();
         const refreshToken: string = result.getRefreshToken().getToken();
+        const accessToken: string = result.getAccessToken().getJwtToken();
         const idTokenTTI: number = +new Date() + 1800000; //now + 1/2 hour
 
         TokenStorage.add(poolData, {
           idToken,
+          accessToken,
           idTokenTTI,
           refreshToken,
           username
@@ -72,15 +75,17 @@ const GetTokenFromInput = async (poolData: any): Promise<string> => {
       onSuccess: function(result: any) {
         const idToken: string = result.idToken.jwtToken;
         const refreshToken: string = result.refreshToken.token;
+        const accessToken: string = result.getAccessToken().getJwtToken();
         const idTokenTTI: number = +new Date() + 1800000; //now + 1/2 hour
 
         TokenStorage.add(poolData, {
           idToken,
+          accessToken,
           idTokenTTI,
           refreshToken,
           username
         }).then(() => {
-          resolve(idToken);
+          resolve(accessToken);
         });
       },
       onFailure: function(err) {
@@ -117,6 +122,7 @@ const GetTokenFromPersistedCredentials = (data: string, poolData: any) =>
             reject("Error");
           } else {
             const idToken: string = result.idToken.jwtToken;
+            const accessToken: string = result.accessToken.jwtToken;
             const refreshToken: string = result.refreshToken.token;
             const idTokenTTI: number = +new Date() + 1800000; //now + 1/2 hour
 
@@ -124,15 +130,16 @@ const GetTokenFromPersistedCredentials = (data: string, poolData: any) =>
               idToken,
               idTokenTTI,
               refreshToken,
+              accessToken,
               username: tokens.username
             }).then(() => {
-              resolve(idToken);
+              resolve(accessToken);
             });
           }
         }
       );
     } else {
-      resolve(tokens.idToken);
+      resolve(tokens.accessToken);
     }
   });
 
